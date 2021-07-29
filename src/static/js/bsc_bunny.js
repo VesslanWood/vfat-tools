@@ -100,6 +100,18 @@ async function loadBunnyChefContract(App, tokens, prices, chef, chefAddress, che
 
     var tokens = {};
 
+    const poolInfos = await Promise.all(Vaults.map(a => loadBunnyPoolInfo(App, tokens, prices, a)));
+    let tvl = 0, userTvl = 0
+    for(const p of poolInfos.filter(p => p))
+    {
+        printBunnyContract(p);
+        if (!isNaN(p.poolPrices.tvl)) tvl += p.poolPrices.tvl;
+        if (!isNaN(p.userStaked * p.poolPrices.price)) userTvl += p.userStaked * p.poolPrices.price;
+    }
+    _print_bold(`\nTotal Value Locked: $${formatMoney(tvl)}`);
+    if (userTvl > 0) {
+        _print_bold(`You are staking a total of $${formatMoney(userTvl)}`);
+    }
     // const rewardTokenAddress = await chefContract.callStatic[rewardTokenFunction]();
     // const rewardToken = await getBscToken(App, rewardTokenAddress, chefAddress);
     // const rewardsPerWeek = rewardsPerWeekFixed
@@ -170,4 +182,34 @@ async function getBunnyPoolInfo(App, tokens, chefAddress,itemAddress, pendingRew
 
     };
 
+}
+async function loadBunnyPoolInfo(App, tokens, prices, contractAddress) {
+    try {
+        const contract = await new ethers.Contract(contractAddress, BUNNY_STAKING_ABI, App.provider);
+        const vault = await getBscToken(App, contractAddress, App.YOUR_ADDRESS);
+        var newTokenAddresses = vault.tokens.filter(x => !getParameterCaseInsensitive(tokens, x));
+        for (const address of newTokenAddresses) {
+            tokens[address] = await getBscToken(App, address, contractAddress);
+        }
+        const totalSupply = await contract.totalSupply() / 1e18;
+        const ppfs = await contract.getPricePerFullShare() / 1e18;
+        const userStaked = await contract.balanceOf(App.YOUR_ADDRESS) / 1e18;
+        const poolPrices = getPoolPrices(tokens, prices, vault, "bsc");
+        return { vault, poolPrices, userStaked, ppfs, totalSupply }
+    }
+    catch (err) {
+        console.log(contractAddress, err);
+        return null;
+    }
+}
+async function printBunnyContract(poolInfo) {
+    const poolPrices = poolInfo.poolPrices;
+    _print(`${poolPrices.name} Price: $${formatMoney(poolPrices.price)} TVL: $${formatMoney(poolPrices.tvl)}`);
+    var userStakedUsd = poolInfo.userStaked * poolPrices.price;
+    var userStakedPct = userStakedUsd / poolPrices.tvl * 100;
+    _print(`You are staking ${poolInfo.userStaked.toFixed(4)} ${poolPrices.name} ($${formatMoney(userStakedUsd)}), ${userStakedPct.toFixed(2)}% of the pool.`);
+    if (poolInfo.userStaked > 0) {
+        _print(`Your stake comprises of ${poolInfo.userStaked * poolInfo.ppfs} ${poolInfo.vault.token.symbol}.`)
+    }
+    _print("");
 }
