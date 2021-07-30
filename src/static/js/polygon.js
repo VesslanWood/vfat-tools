@@ -483,7 +483,8 @@ const main = async () => {
       ['PolyYork            ', `<a href="polyyork"        >Various</a>`, 'POLYYORK     ', 'https://polyyork.finance'],
       ['PolyKiwi            ', `<a href="polykiwi"        >Various</a>`, 'KIWI         ', 'https://polykiwi.farm'],
       //['PolyFund            ', `<a href="polyfund"        >Various</a>`, 'FUND         ', 'https://www.polyfund.finance'],
-      ['PolySky             ', `<a href="polysky"         >Various</a>`, 'SIRIUS       ', 'https://polysky.finance']
+      ['PolySky             ', `<a href="polysky"         >Various</a>`, 'SIRIUS       ', 'https://polysky.finance'],
+      ['PolyGlass           ', `<a href="polyglass"       >Various</a>`, 'GLASS        ', 'https://polyglass.farm']
     ],
   }
 
